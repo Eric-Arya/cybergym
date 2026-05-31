@@ -10,6 +10,8 @@
 cybergym-oss-fuzz-data.7z.part-*
 /server_poc/
 /cybergym_tmp/
+/runs/
+/trajs/
 
 # ==== Automatically generated ignore for python ====
 # Byte-compiled / optimized / DLL files
