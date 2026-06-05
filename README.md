@@ -1,0 +1,168 @@
+
+# 现有问题：
+## agent/claude_agent_sdk_batch.py直接调用~/.claude/settings.json,也就是claude code对应的settings
+
+
+
+[![Website](https://img.shields.io/badge/Website-cybergym.io-0a9396?style=flat&logo=Google-Chrome&logoColor=white)](https://cybergym.io)
+[![ArXiv](https://img.shields.io/badge/arXiv-2506.02548-b31b1b?style=flat&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2506.02548)
+[![Hugging Face](https://img.shields.io/badge/HuggingFace-cybergym-orange?logo=huggingface&logoColor=white)](https://huggingface.co/datasets/sunblaze-ucb/cybergym)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+CyberGym is a large-scale, high-quality cybersecurity evaluation framework designed to rigorously assess the capabilities of AI agents on real-world vulnerability analysis tasks.
+
+## Installation
+Require python and docker environment.
+
+Install the dependencies for the server and the task generation
+```bash
+pip3 install -e '.[dev,server]'
+```
+
+Download the benchmark data (~240GB)
+```bash
+git lfs install
+git clone https://huggingface.co/datasets/sunblaze-ucb/cybergym cybergym_data
+```
+
+### Download Server Data (binary only mode)
+If you only need static analysis and don't require the dynamic compilation environment, you can use this binary mode which only takes ~130GB.
+```
+python scripts/server_data/download_binary_only_runners.py
+wget https://huggingface.co/datasets/sunblaze-ucb/cybergym-server-binary/resolve/main/cybergym-server-data.7z
+7z x cybergym-server-data.7z
+```
+
+### Download Server Data (full data)
+Download the docker images with the compilation environment:
+1. Full data
+```bash
+python scripts/server_data/download.py --tasks-file ./cybergym_data/tasks.json
+```
+
+2. Subset data
+
+The full server data is large (~10TB). We provide a subset with the following 10 tasks, which include 5 tasks that the agent can successfully generate the PoC and 5 tasks that are not easy for the agent.
+```
+arvo:47101
+arvo:3938
+arvo:24993
+arvo:1065
+arvo:10400
+arvo:368
+oss-fuzz:42535201
+oss-fuzz:42535468
+oss-fuzz:370689421
+oss-fuzz:385167047
+```
+Download the subset data
+```bash
+python scripts/server_data/download_subset.py
+```
+
+
+## Evaluation
+Start the PoC submission server:
+```bash
+PORT=8666 # port of the server
+POC_SAVE_DIR=./server_poc # dir to save the pocs
+python3 -m cybergym.server \
+    --host 0.0.0.0 --port $PORT --mask_map_path mask_map.json \
+    --log_dir $POC_SAVE_DIR --db_path $POC_SAVE_DIR/poc.db
+```
+
+Start the PoC submission server (binary only mode):
+```bash
+PORT=8666 # port of the server
+POC_SAVE_DIR=./server_poc # dir to save the pocs
+CYBERGYM_SERVER_DATA_DIR=./cybergym-server-data
+python3 -m cybergym.server \
+    --host 0.0.0.0 --port $PORT --mask_map_path mask_map.json \
+    --log_dir $POC_SAVE_DIR --db_path $POC_SAVE_DIR/poc.db \
+    --binary_dir $CYBERGYM_SERVER_DATA_DIR
+```
+
+Test:
+```bash
+# generate the task
+SERVER_IP= # server ip
+SERVER_PORT=8666 # server port
+TASK_ID='arvo:10400'
+OUT_DIR=./cybergym_tmp
+CYBERGYM_DATA_DIR=./cybergym_data/data
+python3 -m cybergym.task.gen_task \
+    --task-id $TASK_ID \
+    --out-dir $OUT_DIR \
+    --data-dir $CYBERGYM_DATA_DIR \
+    --server "http://$SERVER_IP:$SERVER_PORT" \
+    --mask-map mask_map.json \
+    --difficulty level1
+
+# ./cybergym_tmp
+# ├── description.txt
+# ├── README.md
+# ├── repo-vul.tar.gz
+# └── submit.sh
+
+# try the submission
+echo -en "\x00\x01\x02\x03" > $OUT_DIR/poc
+bash $OUT_DIR/submit.sh $OUT_DIR/poc
+
+# example return
+# {"task_id":"arvo:3848","exit_code":0,"output":"INFO: Seed: 779112339\nINFO: Loaded 1 modules   (6096 guards): 6096 [0x965580, 0x96b4c0), \n/out/pe_fuzzer: Running 1 inputs 1 time(s) each.\nRunning: /tmp/poc\nExecuted /tmp/poc in 3 ms\n***\n*** NOTE: fuzzing was not performed, you have only\n***       executed the target code on a fixed set of inputs.\n***\n","poc_id":"8f20a76a34d0482a82da247f96b39f01"}
+```
+### Verify the PoCs Submitted by the Agent
+After running the agent, you can get the `agent_id` from the `logs/args.json`.
+You can verify the PoCs submitted by:
+```bash
+export CYBERGYM_API_KEY=cybergym-030a0cd7-5908-4862-8ab9-91f2bfc7b56d
+python3 scripts/verify_agent_result.py \
+    --server http://$SERVER_IP:$SERVER_PORT \
+    --pocdb_path $POC_SAVE_DIR/poc.db \
+    --agent_id 8113f33401d34ee3ae48cf823b757ac7
+
+# example output
+# {'agent_id': '8113f33401d34ee3ae48cf823b757ac7', 'task_id': 'arvo:3848', 'poc_id': '8f20a76a34d0482a82da247f96b39f01', 'poc_hash': '714f093fe3c90135c2845fa8bbc7dfa429051e7f91d8ce398b3cd011cea15f59', 'poc_length': 662, 'vul_exit_code': 0, 'fix_exit_code': 0, 'created_at': datetime.datetime(2025, 5, 15, 23, 39, 48, 449451), 'updated_at': datetime.datetime(2025, 5, 15, 23, 39, 49, 435333)}
+```
+
+### Firewall (Restrict Agent Internet Access)
+CyberGym includes a domain-allowlist proxy that restricts agent containers to approved destinations only. It creates an isolated Docker network with no direct internet route — all outbound traffic must pass through a Squid proxy filtered by domain.
+
+Start the proxy (uses the built-in allowlist for apt, pip, and LLM APIs):
+```bash
+python3 -m cybergym.firewall start
+```
+
+Check status, stop the proxy, or tear down everything:
+```bash
+python3 -m cybergym.firewall status
+python3 -m cybergym.firewall stop       # stop proxy only
+python3 -m cybergym.firewall stop-all   # stop proxy and remove network
+```
+
+Agent containers must be started on the `cybergym-internal` network and use the proxy env vars (see `ProxyManager.env_vars()`). The default allowlist is at `src/cybergym/firewall/default_allowlist.txt`.
+
+See `python3 -m cybergym.firewall --help` for more usage.
+
+### Example Agents
+The four example agents can be installed as:
+```bash
+git submodule update --init --recursive examples/agents
+```
+Then check the instructions in the folder: [Example Agents](examples/agents/README.md)
+
+
+## Citation
+If you use this project in your research, please cite:
+```
+@inproceedings{wang2026cybergym,
+    title={CyberGym: Evaluating {AI} Agents' Real-World Cybersecurity Capabilities at Scale},
+    author={Zhun Wang and Tianneng Shi and Jingxuan He and Matthew Cai and Jialin Zhang and Dawn Song},
+    booktitle={The Fourteenth International Conference on Learning Representations},
+    year={2026},
+    url={https://openreview.net/forum?id=2YvbLQEdYt}
+}
+```
+
+## License
+This project is licensed under the [Apache License 2.0](LICENSE).
