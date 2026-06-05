@@ -1,13 +1,8 @@
 {
   "allowedTools": ["Bash", "Read", "Write", "Edit", "Glob", "Grep"],
   "permissionMode": "bypassPermissions",
-  "skipWebFetchPreflight": true,
   "env": {
-    "ANTHROPIC_BASE_URL": "https://api.deepseek.com/anthropic",
-    "ANTHROPIC_AUTH_TOKEN": "YOUR_API_KEY_HERE",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek-v4-flash",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-v4-pro[1m]",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-v4-pro[1m]",
-    "ANTHROPIC_MODEL": "deepseek-v4-pro[1m]"
+    "ANTHROPIC_AUTH_TOKEN": "sk-1vDI3XIiqI8RzAzOXSUcDaGzN96TLWBvQfvIBTsxlFI6TxQ7",
+    "ANTHROPIC_BASE_URL": "http://10.129.164.144:3000"
   }
 }

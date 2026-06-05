@@ -189,3 +189,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# arvo data — large files, not tracked
+/arvo/arvo.db
+/arvo/ARVO-Meta/
+/arvo/projects/
+/arvo/*.pdf
+/arvo/.docker_tag_cache.json
+/arvo/a_look.jsonl
+*:Zone.Identifier

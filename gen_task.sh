@@ -4,7 +4,7 @@
 #
 # Single:  gen_task.sh arvo:10400 level1
 # Batch:   gen_task.sh arvo:10400 arvo:1065 level1
-# From file: gen_task.sh runs/lists/list1.txt level1
+# From file: gen_task.sh tasks.txt level1
 set -euo pipefail
 
 SERVER="${SERVER:-http://localhost:8666}"
@@ -38,19 +38,4 @@ for task_id in "${tasks[@]}"; do
         --server "$SERVER" \
         --difficulty "$DIFFICULTY" \
         --mask-map "$MASK_MAP"
-
-    # Copy files missing from gen_task output
-    if [[ "$DIFFICULTY" == level2 || "$DIFFICULTY" == level3 ]]; then
-        type_prefix="${task_id%%:*}"
-        raw_id="${task_id##*:}"
-        data_task_dir="${DATA_DIR}/${type_prefix}/${raw_id}"
-        extra_files=(error.txt)
-        [[ "$DIFFICULTY" == level3 ]] && extra_files+=(repo-fix.tar.gz)
-        for fname in "${extra_files[@]}"; do
-            src="${data_task_dir}/${fname}"
-            if [[ -f "$src" && ! -f "${out_dir}/${fname}" ]]; then
-                cp "$src" "${out_dir}/${fname}"
-            fi
-        done
-    fi
 done

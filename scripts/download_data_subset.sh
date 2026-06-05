@@ -4,7 +4,7 @@
 #   -d DIFFICULTY  difficulty level: level0|level1|level2|level3 (default: level1)
 #   -w N          concurrent workers (default: 4)
 #
-# Downloads files matching the difficulty level for the 10-task subset.
+# Downloads files matching the difficulty level for the task subset.
 #   level0: repo-vul.tar.gz
 #   level1: + description.txt
 #   level2: + error.txt
@@ -37,8 +37,24 @@ esac
 BASE="https://huggingface.co/datasets/sunblaze-ucb/cybergym/resolve/main"
 
 TASK_IDS=(
-    "oss-fuzz:42535468" "arvo:20200" "arvo:23433"
-
+    "arvo:47101"       "arvo:3938"        "arvo:24993"
+    "arvo:1065"        "arvo:10400"       "arvo:368"
+    "oss-fuzz:42535201"   "oss-fuzz:42535468"
+    "oss-fuzz:370689421"  "oss-fuzz:385167047"
+    "arvo:6975"        "arvo:21000"       "arvo:12420"
+    "arvo:35293"       "arvo:32275"       "arvo:30217"
+    "arvo:23433"       "arvo:20200"       "oss-fuzz:383170476"
+    "arvo:60557"       "arvo:19222"       "arvo:63831"
+    "arvo:50893"       "arvo:1337"        "arvo:13115"
+    "arvo:19573"       "arvo:29827"       "arvo:31065"
+    "arvo:57527"       "arvo:64945"       "arvo:12662"
+    "arvo:61822"       "arvo:28315"       "oss-fuzz:42537687"
+    "arvo:7987"        "oss-fuzz:42537407" "arvo:50656"
+    "arvo:30051"       "arvo:5296"        "arvo:63777"
+    "arvo:35458"       "arvo:10841"       "arvo:25257"
+    "oss-fuzz:42536679" "arvo:509"         "arvo:42917"
+    "arvo:25007"       "arvo:29408"       "arvo:42633"
+    "arvo:19509"
 )
 
 URL_FILE=$(mktemp)
@@ -49,7 +65,7 @@ for tid in "${TASK_IDS[@]}"; do
     done
 done
 
-echo "Downloading $(wc -l < "$URL_FILE") files ($MAX_WORKERS workers)..."
+echo "Downloading $(wc -l < "$URL_FILE") files [$DIFFICULTY] ($MAX_WORKERS workers)..."
 
 download_one() {
     local url="$1" out="$2"
