@@ -1,4 +1,8 @@
-# CyberGym: Evaluating AI Agents' Real-World Cybersecurity Capabilities at Scale
+
+# 现有问题：
+## agent/claude_agent_sdk_batch.py直接调用~/.claude/settings.json,也就是claude code对应的settings
+
+
 
 [![Website](https://img.shields.io/badge/Website-cybergym.io-0a9396?style=flat&logo=Google-Chrome&logoColor=white)](https://cybergym.io)
 [![ArXiv](https://img.shields.io/badge/arXiv-2506.02548-b31b1b?style=flat&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2506.02548)

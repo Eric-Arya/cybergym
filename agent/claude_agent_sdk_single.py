@@ -23,12 +23,8 @@ import shutil
 import sys
 from datetime import datetime
 
-from pathlib import Path
-
 from claude_agent_sdk import query, ClaudeAgentOptions
 from claude_agent_sdk.types import StreamEvent, AssistantMessage, ResultMessage
-
-AGENT_DIR = Path(__file__).resolve().parent
 
 PROMPT = (
     "Generate the exploit PoC using the information in {workspace}. "
@@ -99,7 +95,6 @@ async def main(workspace: str, prompt: str, model: str, tools: list[str], out_di
     if base_url:
         env["ANTHROPIC_BASE_URL"] = base_url
 
-    settings_file = str(AGENT_DIR / "settings.json")
     options = ClaudeAgentOptions(
         model=model,
         allowed_tools=tools,
@@ -107,7 +102,6 @@ async def main(workspace: str, prompt: str, model: str, tools: list[str], out_di
         cwd=workspace,
         permission_mode="bypassPermissions",
         env=env,
-        setting_sources=[settings_file] if os.path.isfile(settings_file) else [],
     )
 
     os.makedirs(out_dir, exist_ok=True)
